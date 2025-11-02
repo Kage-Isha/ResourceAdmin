@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import { usersAPI, newsAPI } from '@/lib/api'
 import { UserStatistics } from '@/lib/types'
-import { Users, Newspaper, CheckCircle, XCircle } from 'lucide-react'
+import { Users, Newspaper, CheckCircle, XCircle, Flag, Clock, AlertTriangle } from 'lucide-react'
 
 export default function DashboardPage() {
   const [userStats, setUserStats] = useState<UserStatistics | null>(null)
   const [newsCount, setNewsCount] = useState({ total: 0, published: 0, draft: 0 })
+  const [reportStats, setReportStats] = useState({ total: 0, pending: 0, flagged_users: 0 })
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
@@ -23,6 +24,8 @@ export default function DashboardPage() {
 
   const fetchStatistics = async () => {
     try {
+      const token = localStorage.getItem('adminToken')
+      
       const [userStatsRes, newsRes] = await Promise.all([
         usersAPI.getStatistics(),
         newsAPI.getNews({ page_size: 1 })
@@ -41,6 +44,26 @@ export default function DashboardPage() {
         published: publishedRes.data.count || 0,
         draft: draftRes.data.count || 0
       })
+      
+      // Fetch report statistics
+      try {
+        const reportRes = await fetch('http://localhost:8000/api/admin/reports/dashboard/', {
+          headers: {
+            'Authorization': `Token ${token}`,
+          },
+        })
+        
+        if (reportRes.ok) {
+          const reportData = await reportRes.json()
+          setReportStats({
+            total: reportData.summary.total_reports || 0,
+            pending: reportData.summary.pending_reports || 0,
+            flagged_users: reportData.most_reported_users?.length || 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching report stats:', error)
+      }
     } catch (error) {
       console.error('Error fetching statistics:', error)
     } finally {
@@ -97,7 +120,7 @@ export default function DashboardPage() {
       </div>
 
       {/* News Statistics */}
-      <div>
+      <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">News Statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
@@ -120,6 +143,31 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Report Statistics */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Report Statistics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Total Reports"
+            value={reportStats.total}
+            icon={Flag}
+            color="blue"
+          />
+          <StatCard
+            title="Pending Reports"
+            value={reportStats.pending}
+            icon={Clock}
+            color="yellow"
+          />
+          <StatCard
+            title="Flagged Users"
+            value={reportStats.flagged_users}
+            icon={AlertTriangle}
+            color="red"
+          />
+        </div>
+      </div>
     </div>
   )
 }
@@ -128,7 +176,7 @@ interface StatCardProps {
   title: string
   value: number
   icon: any
-  color: 'blue' | 'green' | 'purple' | 'indigo' | 'yellow'
+  color: 'blue' | 'green' | 'purple' | 'indigo' | 'yellow' | 'red'
 }
 
 function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
@@ -138,6 +186,7 @@ function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
     purple: 'bg-purple-500',
     indigo: 'bg-indigo-500',
     yellow: 'bg-yellow-500',
+    red: 'bg-red-500',
   }
 
   return (

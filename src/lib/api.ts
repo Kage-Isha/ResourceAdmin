@@ -15,7 +15,7 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('adminToken')
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`
+        config.headers.Authorization = `Token ${token}`
       }
     }
     return config
@@ -44,7 +44,7 @@ export default api
 // Auth API
 export const authAPI = {
   login: (email: string, password: string) =>
-    api.post('/api/token/', { email, password }),
+    api.post('/api/auth/login/', { email, password }),
   
   refreshToken: (refresh: string) =>
     api.post('/api/token/refresh/', { refresh }),

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, Users, Newspaper, LogOut, BarChart3, Shield, MessageSquare, Star } from 'lucide-react'
+import { Home, Users, Newspaper, LogOut, BarChart3, Shield, MessageSquare, Star, Flag } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 const allNavigation = [
@@ -10,6 +10,7 @@ const allNavigation = [
   { name: 'Users', href: '/dashboard/users', icon: Users, requiresSuperAdmin: false },
   { name: 'Admins', href: '/dashboard/admins', icon: Shield, requiresSuperAdmin: true },
   { name: 'News', href: '/dashboard/news', icon: Newspaper, requiresSuperAdmin: false },
+  { name: 'Reports', href: '/dashboard/reports', icon: Flag, requiresSuperAdmin: false },
   { name: 'Contacts', href: '/dashboard/contacts', icon: MessageSquare, requiresSuperAdmin: false },
   { name: 'Testimonials', href: '/dashboard/testimonials', icon: Star, requiresSuperAdmin: false },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, requiresSuperAdmin: false },
