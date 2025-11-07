@@ -25,10 +25,11 @@ export default function LoginPage() {
     
     try {
       const response = await authAPI.login(data.email, data.password)
-      const { access, refresh } = response.data
-      
-      localStorage.setItem('adminToken', access)
-      localStorage.setItem('refreshToken', refresh)
+      const responseData = response.data
+      // Use DRF token if available, otherwise use JWT access token
+      const adminToken = responseData.token || responseData.tokens.access
+      localStorage.setItem('adminToken', adminToken)
+      localStorage.setItem('refreshToken', responseData.tokens.refresh)
       
       // Fetch user info to check if they're staff or superadmin
       try {

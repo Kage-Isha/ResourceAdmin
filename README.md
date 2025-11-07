@@ -1,6 +1,6 @@
-# BIM Resource Share - Admin Panel
+# BIM Knowledge - Admin Panel
 
-A modern Next.js admin panel for managing the BIM Resource Share platform.
+A modern Next.js admin panel for managing the BIM Knowledge platform.
 
 ## Features
 
