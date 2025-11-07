@@ -32,7 +32,7 @@ export default function TestimonialsPage() {
       // Fetch all testimonials for statistics
       const allResponse = await fetch(`http://localhost:8000/api/admin/testimonials/`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
       
@@ -48,7 +48,7 @@ export default function TestimonialsPage() {
 
       const response = await fetch(`http://localhost:8000/api/admin/testimonials/?${params}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -79,7 +79,7 @@ export default function TestimonialsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/testimonials/${id}/toggle_approval/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -112,7 +112,7 @@ export default function TestimonialsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/testimonials/${id}/toggle_featured/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -143,7 +143,7 @@ export default function TestimonialsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/testimonials/${id}/`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 

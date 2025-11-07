@@ -16,6 +16,10 @@ interface ContactMessage {
   is_read: boolean
   is_replied: boolean
   admin_notes: string
+  admin_reply: string
+  replied_by: number | null
+  replied_by_username: string | null
+  replied_at: string | null
   created_at: string
   updated_at: string
 }
@@ -67,7 +71,7 @@ export default function ContactsPage() {
 
       const response = await fetch(`http://localhost:8000/api/admin/contacts/?${params}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -88,7 +92,7 @@ export default function ContactsPage() {
       const token = localStorage.getItem('adminToken')
       const response = await fetch('http://localhost:8000/api/admin/contacts/statistics/', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -128,7 +132,7 @@ export default function ContactsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/contacts/${id}/toggle_read/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -172,7 +176,7 @@ export default function ContactsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/contacts/${id}/toggle_replied/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -195,7 +199,7 @@ export default function ContactsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/contacts/${id}/`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ admin_notes: notes }),
@@ -211,6 +215,69 @@ export default function ContactsPage() {
     }
   }
 
+  const sendReply = async (id: number, replyText: string, event: React.MouseEvent<HTMLButtonElement>) => {
+    const button = event.currentTarget
+    const originalText = button.textContent
+    button.disabled = true
+    button.textContent = 'Sending...'
+
+    try {
+      const token = localStorage.getItem('adminToken')
+      console.log('Sending reply to contact:', id)
+      console.log('Reply text:', replyText)
+      console.log('Token:', token ? 'Present' : 'Missing')
+      
+      const response = await fetch(`http://localhost:8000/api/admin/contacts/${id}/send_reply/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reply: replyText }),
+      })
+
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Success response:', data)
+        alert('Reply sent successfully! User will receive a notification.')
+        
+        // Clear the textarea
+        const textarea = document.getElementById(`reply-${id}`) as HTMLTextAreaElement
+        if (textarea) textarea.value = ''
+        
+        // Refresh data
+        fetchContacts()
+        fetchStatistics()
+        setSelectedContact(data.data)
+        
+        button.textContent = 'Sent ✓'
+        button.classList.remove('bg-blue-600', 'hover:bg-blue-700')
+        button.classList.add('bg-green-600')
+      } else {
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
+        let errorMessage = 'Failed to send reply'
+        try {
+          const error = JSON.parse(errorText)
+          errorMessage = error.error || error.detail || 'Failed to send reply'
+        } catch (e) {
+          errorMessage = errorText || 'Failed to send reply'
+        }
+        alert(errorMessage)
+        button.disabled = false
+        button.textContent = originalText
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error)
+      alert(`Failed to send reply: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      button.disabled = false
+      button.textContent = originalText
+    }
+  }
+
   const postAsTestimonial = async (id: number, event: React.MouseEvent<HTMLButtonElement>) => {
     // Show immediate feedback on the specific button that was clicked
     const button = event.currentTarget as HTMLButtonElement
@@ -223,7 +290,7 @@ export default function ContactsPage() {
       const response = await fetch(`http://localhost:8000/api/admin/contacts/${id}/create_testimonial/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Token ${token}`,
         },
       })
 
@@ -562,7 +629,7 @@ export default function ContactsPage() {
                   </div>
                 </div>
                 
-                <div>
+                <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">Admin Notes</h3>
                   <textarea
                     value={selectedContact.admin_notes}
@@ -574,6 +641,52 @@ export default function ContactsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
                   />
                 </div>
+
+                {/* Send Reply Section - Only for registered users */}
+                {selectedContact.user && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Send Reply to User</h3>
+                    <p className="text-xs text-gray-500 mb-2">This will send a notification to the user</p>
+                    <textarea
+                      id={`reply-${selectedContact.id}`}
+                      placeholder="Type your reply message here..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] mb-2"
+                    />
+                    <button
+                      onClick={(e) => {
+                        const textarea = document.getElementById(`reply-${selectedContact.id}`) as HTMLTextAreaElement
+                        const replyText = textarea?.value || ''
+                        if (!replyText.trim()) {
+                          alert('Please enter a reply message')
+                          return
+                        }
+                        sendReply(selectedContact.id, replyText, e)
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    >
+                      <Reply className="h-4 w-4" />
+                      Send Reply
+                    </button>
+                    {selectedContact.admin_reply && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <p className="text-xs font-semibold text-green-800 mb-1">Previous Reply:</p>
+                        <p className="text-sm text-green-900">{selectedContact.admin_reply}</p>
+                        {selectedContact.replied_at && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Sent by {selectedContact.replied_by_username || 'Admin'} on {new Date(selectedContact.replied_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!selectedContact.user && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> Cannot send reply to guest users (no account registered)
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
